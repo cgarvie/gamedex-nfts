@@ -9,7 +9,7 @@ contract CardOwnership is ERC897434Token {
     * @dev Constructor function.
     * @param _erc20Address Address of ERC-20 token contract.
     */
-    constructor(address _erc20Address) ERC897434Token(_erc20Address) public {
+    constructor(address _erc20Address) ERC897434Token() public {
         
     }
 

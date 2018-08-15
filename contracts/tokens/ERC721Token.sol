@@ -20,8 +20,8 @@ contract ERC721Token is ERC721BasicToken, ERC721Enumerable, ERC721Metadata  {
     */
     constructor() public {
         // register the supported interfaces to conform to ERC721 via ERC165.
-        // _registerInterface(cardRepository.InterfaceId_ERC721Enumerable());
-        // _registerInterface(cardRepository.InterfaceId_ERC721Metadata());
+         _registerInterface(cardRepository.InterfaceId_ERC721Enumerable());
+         _registerInterface(cardRepository.InterfaceId_ERC721Metadata());
     }
 
     /**
@@ -137,6 +137,10 @@ contract ERC721Token is ERC721BasicToken, ERC721Enumerable, ERC721Metadata  {
     function _mint(address _to, uint256 _tokenId, uint256 _deckId, uint256 _royaltyFee) internal {
         _mint(_to, _tokenId);
         cardRepository.mintToken(_tokenId, _deckId, _royaltyFee);
+    }
+
+    function mint(address _to, uint256 _tokenId) public onlyOwner {
+        _mint(_to, _tokenId, 0, 0);
     }
 
     /**

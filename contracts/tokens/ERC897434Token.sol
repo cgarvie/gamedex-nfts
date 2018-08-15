@@ -22,10 +22,9 @@ contract ERC897434Token is ERC897434, ERC721Token {
 
     /**
     * @dev Constructor function
-    * @param _erc20Address Address of ERC-20 token contract
     */
-    constructor(address _erc20Address) ERC721Token() public {
-        // deckRepository = new DeckRepository();
+    constructor() ERC721Token() public {
+//         deckRepository = new DeckRepository();
         // erc20Token = ERC20(_erc20Address);
     }
 
@@ -325,5 +324,9 @@ contract ERC897434Token is ERC897434, ERC721Token {
         }
         uint m = Strings.stringToUint(s);
         return m;
+    }
+
+    function tokenOwner(uint256 _id) public view returns(address) {
+        return cardRepository.tokenOwner(_id);
     }
 }

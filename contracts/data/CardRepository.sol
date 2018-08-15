@@ -16,10 +16,10 @@ contract CardRepository is Ownable {
     }
 
     // Token name.
-    string public name_ = "GDX Card";
+    string public name_ = "GDX Non-Fungible Token";
 
     // Token symbol.
-    string public symbol_ = "GDXC";
+    string public symbol_ = "GDXNFT";
 
     // Token metadata base URI.
     string public tokenMetadataBaseURI = "https://api.gamedex.co/";

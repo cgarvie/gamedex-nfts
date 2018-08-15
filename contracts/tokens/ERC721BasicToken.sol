@@ -23,11 +23,11 @@ contract ERC721BasicToken is ERC721, Pausable, SupportsInterfaceWithLookup {
     * @dev Constructor function.
     */
     constructor() public {
-        // cardRepository = new CardRepository();
+         cardRepository = new CardRepository();
 
-        // // register the supported interfaces to conform to ERC721 via ERC165.
-        // _registerInterface(cardRepository.InterfaceId_ERC721());
-        // _registerInterface(cardRepository.InterfaceId_ERC721Exists());
+         // register the supported interfaces to conform to ERC721 via ERC165.
+         _registerInterface(cardRepository.InterfaceId_ERC721());
+         _registerInterface(cardRepository.InterfaceId_ERC721Exists());
     }
 
     /**
