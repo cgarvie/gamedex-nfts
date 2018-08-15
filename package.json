@@ -1,0 +1,31 @@
+{
+  "name": "gamedex-nfts",
+  "version": "1.0.0",
+  "description": "Non-Fungible Crypto Collectibles",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "chai": "^4.1.2",
+    "chai-bignumber": "^2.0.2",
+    "ethjs-abi": "^0.2.1",
+    "lodash": "^4.17.10",
+    "web3": "^0.20.6",
+    "web3-utils": "^1.0.0-beta.35"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cgarvie/gamedex-nfts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cgarvie/gamedex-nfts/issues"
+  },
+  "homepage": "https://github.com/cgarvie/gamedex-nfts#readme"
+}
