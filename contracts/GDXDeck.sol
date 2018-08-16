@@ -3,36 +3,15 @@ pragma solidity 0.4.24;
 import "./tokens/ERC897434Token.sol";
 
 
-contract CardOwnership is ERC897434Token {
+contract GDXDeck is ERC897434Token {
 
     /**
     * @dev Constructor function.
-    * @param _erc20Address Address of ERC-20 token contract.
+    * @param _deckRepo Address of storage contract DeckRepository.
+    * @param _cardRepo Address of storage contract CardRepository.
     */
-    constructor(address _erc20Address) ERC897434Token() public {
+    constructor(address _deckRepo, address _cardRepo) ERC897434Token(_deckRepo, _cardRepo) public {
         
-    }
-
-    /**
-     * @dev Gets a deck.
-     * @param _deckId ID of deck.
-     * @return address Issuer of deck.
-     * @return uint256[] List of token IDs.
-     */
-    function getDeck(uint256 _deckId) public view returns(address, uint256[]) {
-        return (deckRepository.getDeckIssuer(_deckId), deckRepository.getListOfTokenIds(_deckId));
-    }
-
-    /**
-     * @dev Gets a token.
-     * @param _tokenId ID of deck.
-     * @return uint256 ID of token.
-     * @return uint256 ID of deck the token belongs to.
-     * @return address Owner of token.
-     * @return uint256 Royalty fee of token.
-     */
-    function getToken(uint256 _tokenId) public view returns(uint256, uint256, address, uint256) {
-        return (_tokenId, cardRepository.getDeckIdOfToken(_tokenId), cardRepository.tokenOwner(_tokenId), cardRepository.getRoyaltyFee(_tokenId));
     }
 
     /**

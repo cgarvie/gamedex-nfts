@@ -1,19 +1,18 @@
-const { assertRevert } = require('./helpers/assertRevert');
-const { shouldBehaveLikeERC721BasicToken } = require('./ERC721BasicToken.behavior');
-const { shouldBehaveLikeMintAndBurnERC721Token } = require('./ERC721MintBurn.behavior');
-const { shouldSupportInterfaces } = require('./helpers/SupportsInterface.behavior');
+const { assertRevert } = require('../helpers/assertRevert');
+const { shouldSupportInterfaces } = require('../introspection/SupportsInterface.behavior');
 const _ = require('lodash');
 
 const BigNumber = web3.BigNumber;
-const ERC721Token = artifacts.require('ERC897434Token.sol');
+const CardRepository = artifacts.require('CardRepository.sol');
+const ERC721TokenMock = artifacts.require('ERC721TokenMock.sol');
 
 require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
-contract('ERC897434Token', function (accounts) {
-  const name = 'GDX Non-Fungible Token';
-  const symbol = 'GDXNFT';
+contract('ERC721TokenMock', function (accounts) {
+  const name = 'GDXCard';
+  const symbol = 'GDXC';
   const firstTokenId = 100;
   const secondTokenId = 200;
   const nonExistentTokenId = 999;
@@ -21,11 +20,10 @@ contract('ERC897434Token', function (accounts) {
   const anyone = accounts[9];
 
   beforeEach(async function () {
-    this.token = await ERC721Token.new({ from: creator });
+    this.cardRepo = await CardRepository.new({ from: creator });
+    this.token = await ERC721TokenMock.new(this.cardRepo.address, { from: creator });
+    await this.cardRepo.transferOwnership(this.token.address, { from: creator })
   });
-
-  shouldBehaveLikeERC721BasicToken(accounts);
-  shouldBehaveLikeMintAndBurnERC721Token(accounts);
 
   describe('like a full ERC721', function () {
     beforeEach(async function () {
@@ -81,13 +79,13 @@ contract('ERC897434Token', function (accounts) {
     describe('removeTokenFrom', function () {
       it('reverts if the correct owner is not passed', async function () {
         await assertRevert(
-          this.token._removeTokenFrom(anyone, firstTokenId, { from: creator })
+          this.token.removeTokenFrom(anyone, firstTokenId, { from: creator })
         );
       });
 
       context('once removed', function () {
         beforeEach(async function () {
-          await this.token._removeTokenFrom(creator, firstTokenId, { from: creator });
+          await this.token.removeTokenFrom(creator, firstTokenId, { from: creator });
         });
 
         it('has been removed', async function () {
@@ -112,7 +110,7 @@ contract('ERC897434Token', function (accounts) {
     });
 
     describe('metadata', function () {
-      const sampleUri = 'mock://mytoken';
+      const sampleUri = 'token100';
 
       it('has a name', async function () {
         const tokenName = await this.token.name();
@@ -127,7 +125,7 @@ contract('ERC897434Token', function (accounts) {
       it('sets and returns metadata for a token id', async function () {
         await this.token.setTokenURI(firstTokenId, sampleUri);
         const uri = await this.token.tokenURI(firstTokenId);
-        uri.should.be.equal(sampleUri);
+        uri.should.be.equal("https://www.api.gamedex.com/" + sampleUri);
       });
 
       it('reverts when setting metadata for non existent token id', async function () {
@@ -143,7 +141,7 @@ contract('ERC897434Token', function (accounts) {
 
       it('returns empty metadata for token', async function () {
         const uri = await this.token.tokenURI(firstTokenId);
-        uri.should.be.equal('');
+        uri.should.be.equal('https://www.api.gamedex.com/');
       });
 
       it('reverts when querying metadata for non existent token id', async function () {

@@ -1,7 +1,7 @@
-const { shouldSupportInterfaces } = require('./helpers/SupportsInterface.behavior');
-const { assertRevert } = require('./helpers/assertRevert');
-const { decodeLogs } = require('./helpers/decodeLogs');
-const { sendTransaction } = require('./helpers/sendTransaction');
+const { shouldSupportInterfaces } = require('../introspection/SupportsInterface.behavior');
+const { assertRevert } = require('../helpers/assertRevert');
+const { decodeLogs } = require('../helpers/decodeLogs');
+const { sendTransaction } = require('../helpers/sendTransaction');
 const _ = require('lodash');
 
 const ERC721Receiver = artifacts.require('ERC721ReceiverMock.sol');

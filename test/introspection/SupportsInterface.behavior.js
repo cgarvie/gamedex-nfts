@@ -1,4 +1,4 @@
-const { makeInterfaceId } = require('./makeInterfaceId');
+const { makeInterfaceId } = require('../helpers/makeInterfaceId');
 
 const INTERFACE_IDS = {
   ERC165: makeInterfaceId([

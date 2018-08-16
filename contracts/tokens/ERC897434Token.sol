@@ -2,7 +2,6 @@ pragma solidity 0.4.24;
 
 import "../interfaces/ERC897434.sol";
 import "./ERC721Token.sol";
-import "../interfaces/ERC20.sol";
 import "../data/DeckRepository.sol";
 import "../control/Pausable.sol";
 import "../libraries/Strings.sol";
@@ -17,24 +16,11 @@ contract ERC897434Token is ERC897434, ERC721Token {
     // Reference to CardRepository storage contract.
     DeckRepository public deckRepository;
 
-    // Reference to GDX ERC20 contract.
-    ERC20 public erc20Token;
-
     /**
     * @dev Constructor function
     */
-    constructor() ERC721Token() public {
-//         deckRepository = new DeckRepository();
-        // erc20Token = ERC20(_erc20Address);
-    }
-
-    /**
-     * @dev Checks msg.sender can transfer a deck, by being issuer.
-     * @param _deckId uint256 ID of the deck to validate.
-     */
-    modifier canTransferDeck(uint256 _deckId) {
-        require(issuerOf(_deckId) == msg.sender);
-        _;
+    constructor(address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
+        deckRepository = DeckRepository(_deckRepo);
     }
 
     /**
@@ -151,119 +137,19 @@ contract ERC897434Token is ERC897434, ERC721Token {
     }
 
     /**
-     * @dev Transfers the ownership of a given token ID to another address.
-     * Usage of this method is discouraged, use `safeTransferFrom` whenever possible.
-     * Requires the msg sender to be the owner, approved, or operator.
-     * @param _from current owner of the token.
-     * @param _to address to receive the ownership of the given token ID.
-     * @param _tokenId uint256 ID of the token to be transferred.
-    */
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-    public whenNotPaused
-    canTransfer(_tokenId)
-    {
-        require(_from != address(0));
-        require(_to != address(0));
-        // Check to make sure the buyer has approved the GDX tokens for owner of the token.
-        // uint256 tokensAllowed = erc20Token.allowance(_to, _from);
-        // require(tokensAllowed >= royaltyFee(_to, _tokenId));
-
-        _clearApproval(_from, _tokenId);
-        _removeTokenFrom(_from, _tokenId);
-        _addTokenTo(_to, _tokenId);
-
-        // Transfer the royalty fee to the issuer of the token.
-        // address issuer = deckRepository.getDeckIssuer(cardRepository.getDeckIdOfToken(_tokenId));
-        // erc20Token.transferFrom(_from, issuer, tokensAllowed);
-
-        emit Transfer(_from, _to, _tokenId);
-    }
-
-    /**
-     * @dev Safely transfers the ownership of a given token ID to another address.
-     * If the target address is a contract, it must implement `onERC721Received`,
-     * which is called upon a safe transfer, and return the magic value
-     * `bytes4(keccak256("onERC721Received(address,uint256,bytes)"))`; otherwise,
-     * the transfer is reverted.
-     *
-     * Requires the msg sender to be the owner, approved, or operator.
-     * @param _from current owner of the token.
-     * @param _to address to receive the ownership of the given token ID.
-     * @param _tokenId uint256 ID of the token to be transferred.
-    */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-    public whenNotPaused
-    canTransfer(_tokenId)
-    {
-        // solium-disable-next-line arg-overflow
-        safeTransferFrom(_from, _to, _tokenId, "");
-    }
-
-    /**
-     * @dev Safely transfers the ownership of a given token ID to another address.
-     * If the target address is a contract, it must implement `onERC721Received`,
-     * which is called upon a safe transfer, and return the magic value
-     * `bytes4(keccak256("onERC721Received(address,uint256,bytes)"))`; otherwise,
-     * the transfer is reverted.
-     * Requires the msg sender to be the owner, approved, or operator.
-     * @param _from current owner of the token.
-     * @param _to address to receive the ownership of the given token ID.
-     * @param _tokenId uint256 ID of the token to be transferred.
-     * @param _data bytes data to send along with a safe transfer check.
-     */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        bytes _data
-    )
-    public whenNotPaused
-    canTransfer(_tokenId)
-    {
-        transferFrom(_from, _to, _tokenId);
-        // solium-disable-next-line arg-overflow
-        require(_checkAndCallSafeTransfer(_from, _to, _tokenId, _data));
-    }
-
-    /**
-     * @dev Transfers the ownership of a given deck ID to another address.
-     * Requires the msg sender to be the issuer.
-     * @param _from current owner of the deck.
-     * @param _to address to receive the ownership of the given deck ID.
-     * @param _deckId uint256 ID of the deck to be transferred.
-    */
-    function transferDeck(
-        address _from,
-        address _to,
-        uint256 _deckId
-    )
-    public whenNotPaused
-    canTransferDeck(_deckId)
-    {
-        require(_from != address(0));
-        require(_to != address(0));
-
-        _removeDeckFrom(_from, _deckId);
-        _addDeckTo(_to, _deckId);
-
-        emit DeckTransfer(_from, _to, _deckId);
-    }
-
-    /**
      * @dev Internal function to add a token ID to the list of a given address.
      * @param _to address representing the new issuer of the given deck ID.
      * @param _deckId uint256 ID of the deck to be added to the decks list of the given address.
      */
     function _addDeckTo(address _to, uint256 _deckId) internal {
-        deckRepository.addDeck(_deckId, _to);
+        require(deckRepository.deckIssuer(_deckId) == address(0));
+
+        deckRepository.setDeckIssuer(_to, _deckId);
+        deckRepository.increaseIssuedDecksCount(_to);
+
+        uint256 length = deckRepository.getIssuedDecksLength(_to);
+        deckRepository.addToIssuedDecks(_to, _deckId);
+        deckRepository.setIssuedDecksIndex(_deckId, length);
     }
 
     /**
@@ -293,28 +179,6 @@ contract ERC897434Token is ERC897434, ERC721Token {
         emit DeckIssue(_to, deckRepository.numberOfTotalDecks());
     }
 
-    /**
-     * @dev Internal function to remove a deck ID from the list of a given address.
-     * @param _from address representing the previous issuer of the given deck ID.
-     * @param _deckId uint256 ID of the deck to be removed from the decks list of the given address.
-     */
-    function _removeDeckFrom(address _from, uint256 _deckId) internal {
-        deckRepository.removeDeckFrom(_from, _deckId);
-    }
-
-    /**
-     * @dev Internal function to discard a specific deck.
-     * Reverts if the deck does not exist.
-     * @param _issuer issuer of the deck to discard.
-     * @param _deckId uint256 ID of the deck being discarded by the msg.sender.
-     */
-    function _discard(address _issuer, uint256 _deckId) internal {
-        _removeDeckFrom(_issuer, _deckId);
-        emit DeckTransfer(_issuer, address(0), _deckId);
-
-        deckRepository.discardDeck(_deckId);
-    }
-
     function ceil(uint a) private pure returns (uint) {
         string memory x = Strings.uint2str(a);
         uint256 length = Strings.utfStringLength(x);
@@ -324,9 +188,5 @@ contract ERC897434Token is ERC897434, ERC721Token {
         }
         uint m = Strings.stringToUint(s);
         return m;
-    }
-
-    function tokenOwner(uint256 _id) public view returns(address) {
-        return cardRepository.tokenOwner(_id);
     }
 }

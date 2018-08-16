@@ -16,13 +16,13 @@ contract CardRepository is Ownable {
     }
 
     // Token name.
-    string public name_ = "GDX Non-Fungible Token";
+    string public name_ = "GDXCard";
 
     // Token symbol.
-    string public symbol_ = "GDXNFT";
+    string public symbol_ = "GDXC";
 
     // Token metadata base URI.
-    string public tokenMetadataBaseURI = "https://api.gamedex.co/";
+    string public tokenMetadataBaseURI = "https://www.api.gamedex.com/";
 
     // uint256 variable to track IDs of tokens.
     uint256 public numberOfTotalTokens;
@@ -57,51 +57,11 @@ contract CardRepository is Ownable {
     // Optional mapping for token URIs.
     mapping(uint256 => string) public tokenURIs;
 
-    // Equals to `bytes4(keccak256("onERC721Received(address,uint256,bytes)"))`
-    // which can be also obtained as `ERC721Receiver(0).onERC721Received.selector`
-    bytes4 public constant ERC721_RECEIVED = 0xf0b9e5ba;
-
-    /*
-     * 0x80ac58cd ===
-     *   bytes4(keccak256('balanceOf(address)')) ^
-     *   bytes4(keccak256('ownerOf(uint256)')) ^
-     *   bytes4(keccak256('approve(address,uint256)')) ^
-     *   bytes4(keccak256('getApproved(uint256)')) ^
-     *   bytes4(keccak256('setApprovalForAll(address,bool)')) ^
-     *   bytes4(keccak256('isApprovedForAll(address,address)')) ^
-     *   bytes4(keccak256('transferFrom(address,address,uint256)')) ^
-     *   bytes4(keccak256('safeTransferFrom(address,address,uint256)')) ^
-     *   bytes4(keccak256('safeTransferFrom(address,address,uint256,bytes)'))
-     */
-    bytes4 public constant InterfaceId_ERC721 = 0x80ac58cd;
-
-    /*
-     * 0x4f558e79 ===
-     *   bytes4(keccak256('exists(uint256)'))
-     */
-    bytes4 public constant InterfaceId_ERC721Exists = 0x4f558e79;
-
-    /**
-     * 0x780e9d63 ===
-     *   bytes4(keccak256('totalSupply()')) ^
-     *   bytes4(keccak256('tokenOfOwnerByIndex(address,uint256)')) ^
-     *   bytes4(keccak256('tokenByIndex(uint256)'))
-     */
-    bytes4 public constant InterfaceId_ERC721Enumerable = 0x780e9d63;
-
-    /**
-     * 0x5b5e139f ===
-     *   bytes4(keccak256('name()')) ^
-     *   bytes4(keccak256('symbol()')) ^
-     *   bytes4(keccak256('tokenURI(uint256)'))
-     */
-    bytes4 public constant InterfaceId_ERC721Metadata = 0x5b5e139f;
-
     /**
      * @dev Gets the total supply of the tokens.
      * @return uint256 Total supply.
      */
-    function getTotalSupply() public view returns(uint256) {
+    function getTotalSupply() public view returns (uint256) {
         return allTokens.length;
     }
 
@@ -110,7 +70,7 @@ contract CardRepository is Ownable {
      * @param _owner Owner of the token.
      * @return uint256 Owned tokens.
      */
-    function getOwnedTokensCount(address _owner) public view returns(uint256) {
+    function getOwnedTokensCount(address _owner) public view returns (uint256) {
         return ownedTokens[_owner].length;
     }
 
@@ -119,7 +79,7 @@ contract CardRepository is Ownable {
      * @param _owner Owner of the token.
      * @return uint256 Index of token.
      */
-    function getLastOwnedTokensIndex(address _owner) public view returns(uint256) {
+    function getLastOwnedTokensIndex(address _owner) public view returns (uint256) {
         return ownedTokens[_owner].length.sub(1);
     }
 
@@ -127,7 +87,7 @@ contract CardRepository is Ownable {
      * @dev Gets last index of allTokens array.
      * @return uint256 Index of token.
      */
-    function getLastAllTokensIndex() public view returns(uint256) {
+    function getLastAllTokensIndex() public view returns (uint256) {
         return allTokens.length.sub(1);
     }
 
@@ -136,7 +96,7 @@ contract CardRepository is Ownable {
      * @param _tokenId ID of token.
      * @return uint256 Deck ID.
      */
-    function getDeckIdOfToken(uint256 _tokenId) public view returns(uint256) {
+    function getDeckIdOfToken(uint256 _tokenId) public view returns (uint256) {
         return tokenStructs[_tokenId].deckId;
     }
 
@@ -145,7 +105,7 @@ contract CardRepository is Ownable {
      * @param _tokenId ID of token.
      * @return uint256 Royalty fee.
      */
-    function getRoyaltyFee(uint256 _tokenId) public view returns(uint256) {
+    function getRoyaltyFee(uint256 _tokenId) public view returns (uint256) {
         return tokenStructs[_tokenId].royaltyFee;
     }
 
@@ -154,8 +114,24 @@ contract CardRepository is Ownable {
      * @param _owner Owner of token.
      * @return uint256[] List of IDs of tokens.
      */
-    function getListOfOwnedTokens(address _owner) public view returns(uint256[]) {
+    function getListOfOwnedTokens(address _owner) public view returns (uint256[]) {
         return ownedTokens[_owner];
+    }
+
+    /**
+     * @dev Sets name of the token.
+     * @param _name Name of token.
+     */
+    function setName(string _name) public onlyOwner {
+        name_ = _name;
+    }
+
+    /**
+     * @dev Sets symbol of the token.
+     * @param _symbol Symol of token.
+     */
+    function setSymbol(string _symbol) public onlyOwner {
+        symbol_ = _symbol;
     }
 
     /**
@@ -322,63 +298,6 @@ contract CardRepository is Ownable {
         uint256 length = getOwnedTokensCount(_owner);
         addToOwnedTokens(_owner, _tokenId);
         setOwnedTokenIndex(_tokenId, length);
-    }
-
-    /**
-     * @dev Removes token.
-     * @param _owner Owner of token.
-     * @param _tokenId Token ID to add.
-     */
-    function removeToken(address _owner, uint256 _tokenId) public onlyOwner {
-        uint256 tokenIndex = ownedTokensIndex[_tokenId];
-        uint256 lastTokenIndex = getLastOwnedTokensIndex(_owner);
-        uint256 lastToken = ownedTokens[_owner][lastTokenIndex];
-
-        setOwnedTokenId(_owner, tokenIndex, lastToken);
-        setOwnedTokenId(_owner, lastTokenIndex, 0);
-
-        // Note that this will handle single-element arrays. In that case, both tokenIndex and lastTokenIndex are going to.
-        // be zero. Then we can make sure that we will remove _tokenId from the ownedTokens list since we are first swapping.
-        // the lastToken to the first position, and then dropping the element placed in the last position of the list.
-
-        decreaseOwnedTokensLength(_owner);
-        setOwnedTokenIndex(_tokenId, 0);
-        setOwnedTokenIndex(lastToken, tokenIndex);
-    }
-
-    /**
-     * @dev Mints new token.
-     * @param _tokenId ID of new token.
-     * @param _deckId ID of new deck.
-     * @param _royaltyFee Royalty fee of new token.
-     */
-    function mintToken(uint256 _tokenId, uint256 _deckId, uint256 _royaltyFee) public onlyOwner {
-        increaseAllTokensIndex(_tokenId);
-        addToAllTokens(_tokenId);
-        addToTokenStructs(_tokenId, _deckId, _royaltyFee);
-    }
-
-    /**
-     * @dev Burns token.
-     * @param _tokenId ID of token.
-     */
-    function burnToken(uint256 _tokenId) public onlyOwner {
-        // Clear metadata (if any).
-        deleteTokenURI(_tokenId);
-
-        // Delete struct.
-        deleteTokenStruct(_tokenId);
-
-        // Reorganize all tokens array.
-        uint256 tokenIndex = allTokensIndex[_tokenId];
-        uint256 lastTokenIndex = getLastAllTokensIndex();
-        uint256 lastToken = allTokens[lastTokenIndex];
-
-        setAllTokenId(tokenIndex, lastToken);
-        setAllTokenId(lastTokenIndex, 0);
-
-        decreaseAllTokensLength();
-        setAllTokenIndex(lastToken, tokenIndex);
     }
 
     /**

@@ -22,13 +22,13 @@ contract DeckRepository is Ownable {
     uint256[] public allDecks;
 
     // Mapping from deck ID to Deck struct.
-    mapping (uint256 => Deck) public deckStructs;
+    mapping(uint256 => Deck) public deckStructs;
 
     // Mapping from deck ID to issuer.
-    mapping (uint256 => address) public deckIssuer;
+    mapping(uint256 => address) public deckIssuer;
 
     // Mapping from issuer to number of issued decks.
-    mapping (address => uint256) public issuedDecksCount;
+    mapping(address => uint256) public issuedDecksCount;
 
     // Mapping from issuer to list of issued deck IDs.
     mapping(address => uint256[]) public issuedDecks;
@@ -44,7 +44,7 @@ contract DeckRepository is Ownable {
      * @param _issuer Address of issuer.
      * @return uint256[] List of deck IDs.
      */
-    function getListOfIssuedDeckIds(address _issuer) public view returns(uint256[]) {
+    function getListOfIssuedDeckIds(address _issuer) public view returns (uint256[]) {
         return issuedDecks[_issuer];
     }
 
@@ -53,7 +53,7 @@ contract DeckRepository is Ownable {
      * @param _deckId ID of deck.
      * @return uint256[] List of token IDs.
      */
-    function getListOfTokenIds(uint256 _deckId) public view returns(uint256[]) {
+    function getListOfTokenIds(uint256 _deckId) public view returns (uint256[]) {
         return deckStructs[_deckId].tokenIds;
     }
 
@@ -61,7 +61,7 @@ contract DeckRepository is Ownable {
      * @dev Gets count of allDecks array.
      * @return uint256 Count of all decks in the allDecks array.
      */
-    function getAllDecksCount() public view returns(uint256) {
+    function getAllDecksCount() public view returns (uint256) {
         return allDecks.length;
     }
 
@@ -70,7 +70,7 @@ contract DeckRepository is Ownable {
      * @param _index Index of deck.
      * @return ID of deck.
      */
-    function getDeckIdByIndex(uint256 _index) public view returns(uint256) {
+    function getDeckIdByIndex(uint256 _index) public view returns (uint256) {
         require(_index < allDecks.length);
         return allDecks[_index];
     }
@@ -170,7 +170,7 @@ contract DeckRepository is Ownable {
      * @param _issuer Address of Issuer.
      */
     function increaseIssuedDecksCount(address _issuer) public onlyOwner {
-        issuedDecksCount[_issuer] = issuedDecksCount[_issuer].add(1);    
+        issuedDecksCount[_issuer] = issuedDecksCount[_issuer].add(1);
     }
 
     /**
@@ -245,68 +245,6 @@ contract DeckRepository is Ownable {
      */
     function addToDeckTokenIds(uint256 _deckId, uint256 _tokenId) public onlyOwner {
         deckStructs[_deckId].tokenIds.push(_tokenId);
-    }
-
-    /**
-     * @dev Adds deck.
-     * @param _deckId ID of deck.
-     * @param _issuer Address of Issuer.
-     */
-    function addDeck(uint256 _deckId, address _issuer) public onlyOwner {
-        require(deckIssuer[_deckId] == address(0));
-
-        setDeckIssuer(_issuer, _deckId);
-        increaseIssuedDecksCount(_issuer);
-
-        uint256 length = getIssuedDecksLength(_issuer);
-        addToIssuedDecks(_issuer, _deckId);
-        setIssuedDecksIndex(_deckId, length);
-    }
-
-    /**
-     * @dev Removes deck.
-     * @param _from Address of issuer to remove deck ID from.
-     * @param _deckId ID of deck to remove.
-     */
-    function removeDeckFrom(address _from, uint256 _deckId) public onlyOwner {
-        decreaseIssuedDecksCount(_from);
-        setDeckIssuer(address(0), _deckId);
-
-        uint256 deckIndex = issuedDecksIndex[_deckId];
-        uint256 lastDeckIndex = getLastIssuedDeckIndex(_from);
-        uint256 lastDeck = issuedDecks[_from][lastDeckIndex];
-
-        setIssuedDecks(_from, lastDeck, deckIndex);
-        setIssuedDecks(_from, 0, lastDeckIndex);
-
-        // Note that this will handle single-element arrays. In that case, both tokenIndex and lastTokenIndex are going to.
-        // be zero. Then we can make sure that we will remove _tokenId from the ownedTokens list since we are first swapping.
-        // the lastToken to the first position, and then dropping the element placed in the last position of the list.
-
-        decreaseIssuedDecksLength(_from);
-        setIssuedDecksIndex(_deckId, 0);
-        setIssuedDecksIndex(lastDeck, deckIndex);
-    }
-
-    /**
-     * @dev Discards deck.
-     * @param _deckId ID of deck to discard.
-     */
-    function discardDeck(uint256 _deckId) public onlyOwner {
-        // Delete struct.
-        deleteDeckStruct(_deckId);
-
-        // Reorganize all tokens array.
-        uint256 deckIndex = allDecksIndex[_deckId];
-        uint256 lastDeckIndex = getLastAllDeckIndex();
-        uint256 lastDeck = allDecks[lastDeckIndex];
-
-        setAllDeckId(lastDeck, deckIndex);
-        setAllDeckId(0, lastDeckIndex);
-
-        decreaseAllDecksLength();
-        setAllDecksIndex(_deckId, 0);
-        setAllDecksIndex(lastDeck, deckIndex);
     }
 
     /**

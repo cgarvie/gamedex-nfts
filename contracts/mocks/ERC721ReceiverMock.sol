@@ -4,7 +4,6 @@ import "../interfaces/ERC721Receiver.sol";
 
 
 contract ERC721ReceiverMock is ERC721Receiver {
-
     bytes4 retval;
     bool reverts;
 
@@ -28,11 +27,16 @@ contract ERC721ReceiverMock is ERC721Receiver {
         bytes _data
     )
     public
-    returns(bytes4)
+    returns (bytes4)
     {
         require(!reverts);
-        
-        emit Received(_operator, _from, _tokenId, _data, gasleft()); // msg.gas was deprecated in solidityv0.4.21
+        emit Received(
+            _operator,
+            _from,
+            _tokenId,
+            _data,
+            gasleft() // msg.gas was deprecated in solidityv0.4.21
+        );
         return retval;
     }
 }
