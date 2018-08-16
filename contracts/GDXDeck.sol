@@ -10,7 +10,7 @@ contract GDXDeck is ERC897434Token {
     * @param _deckRepo Address of storage contract DeckRepository.
     * @param _cardRepo Address of storage contract CardRepository.
     */
-    constructor(address _deckRepo, address _cardRepo) ERC897434Token(_deckRepo, _cardRepo) public {
+    constructor(address _erc223, address _deckRepo, address _cardRepo) ERC897434Token(_erc223, _deckRepo, _cardRepo) public {
         
     }
 

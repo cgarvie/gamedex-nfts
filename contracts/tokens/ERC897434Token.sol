@@ -1,6 +1,7 @@
 pragma solidity 0.4.24;
 
 import "../interfaces/ERC897434.sol";
+import "../interfaces/ERC223Interface.sol";
 import "./ERC721Token.sol";
 import "../data/DeckRepository.sol";
 import "../control/Pausable.sol";
@@ -16,10 +17,14 @@ contract ERC897434Token is ERC897434, ERC721Token {
     // Reference to CardRepository storage contract.
     DeckRepository public deckRepository;
 
+    // Reference to ERC-223 token deployed
+    ERC223Interface public erc223;
+
     /**
     * @dev Constructor function
     */
-    constructor(address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
+    constructor(address _erc223, address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
+        erc223 = ERC223Interface(_erc223);
         deckRepository = DeckRepository(_deckRepo);
     }
 
@@ -134,6 +139,33 @@ contract ERC897434Token is ERC897434, ERC721Token {
 
         uint count = Strings.utfStringLength(Strings.uint2str(fact)) - 1;
         return (_standardFee * n) / (1000 * (100 ** count));
+    }
+
+    /**
+     * @dev Transfers the ownership of a given token ID to another address
+     * Usage of this method is discouraged, use `safeTransferFrom` whenever possible
+     * Requires the msg sender to be the owner, approved, or operator
+     * @param _from current owner of the token
+     * @param _to address to receive the ownership of the given token ID
+     * @param _tokenId uint256 ID of the token to be transferred
+    */
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _tokenId
+    )
+    public whenNotPaused
+    {
+        require(isApprovedOrOwner(msg.sender, _tokenId));
+        require(_to != address(0));
+
+        _clearApproval(_from, _tokenId);
+        _removeTokenFrom(_from, _tokenId);
+        _addTokenTo(_to, _tokenId);
+
+        require(erc223.transferFrom(_to, _from, royaltyFee(_to, _tokenId)));
+
+        emit Transfer(_from, _to, _tokenId);
     }
 
     /**
