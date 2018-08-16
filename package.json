@@ -1,7 +1,7 @@
 {
-  "name": "openzeppelin-solidity",
-  "version": "1.12.0",
-  "description": "Secure Smart Contract library for Solidity",
+  "name": "GDX-NFTS",
+  "version": "1.0.0",
+  "description": "Non-fungible ERC897434 Token",
   "files": [
     "contracts",
     "test"
@@ -30,8 +30,6 @@
     "security",
     "zeppelin"
   ],
-  "author": "OpenZeppelin Community <maintainers@openzeppelin.org>",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/OpenZeppelin/zeppelin-solidity/issues"
   },

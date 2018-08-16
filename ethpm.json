@@ -1,7 +1,7 @@
 {
-  "package_name": "zeppelin",
-  "version": "1.12.0",
-  "description": "Secure Smart Contract library for Solidity",
+  "package_name": "gdx",
+  "version": "1.0.0",
+  "description": "Non-fungible ERC897434 Token",
   "authors": [
     "OpenZeppelin Community <maintainers@openzeppelin.org>"
   ],
