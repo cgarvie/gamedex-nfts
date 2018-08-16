@@ -212,7 +212,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _to address to be approved for the given token ID
      * @param _tokenId uint256 ID of the token to be approved
      */
-    function approve(address _to, uint256 _tokenId) public {
+    function approve(address _to, uint256 _tokenId) public whenNotPaused {
         address owner = ownerOf(_tokenId);
         require(_to != owner);
         require(msg.sender == owner || isApprovedForAll(owner, msg.sender));
@@ -227,7 +227,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _to operator address to set the approval
      * @param _approved representing the status of the approval to be set
      */
-    function setApprovalForAll(address _to, bool _approved) public {
+    function setApprovalForAll(address _to, bool _approved) public whenNotPaused {
         require(_to != msg.sender);
         cardRepository.setOperatorApproval(msg.sender, _to, _approved);
         emit ApprovalForAll(msg.sender, _to, _approved);
@@ -246,7 +246,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
         address _to,
         uint256 _tokenId
     )
-    public
+    public whenNotPaused
     {
         require(isApprovedOrOwner(msg.sender, _tokenId));
         require(_to != address(0));
@@ -275,7 +275,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
         address _to,
         uint256 _tokenId
     )
-    public
+    public whenNotPaused
     {
         // solium-disable-next-line arg-overflow
         safeTransferFrom(_from, _to, _tokenId, "");
@@ -299,7 +299,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
         uint256 _tokenId,
         bytes _data
     )
-    public
+    public whenNotPaused
     {
         transferFrom(_from, _to, _tokenId);
         // solium-disable-next-line arg-overflow

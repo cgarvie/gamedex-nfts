@@ -19,8 +19,8 @@ contract GDXDeck is ERC897434Token {
      * @param _fee Royalty fee of the tokens.
      * @param _numberOfTokens Number of tokens to issue.
      */
-    function issueDeck(uint256 _fee, uint256 _numberOfTokens) public whenNotPaused {
-        _issue(msg.sender, _fee, _numberOfTokens);
+    function issueDeck(address _to, uint256 _fee, uint256 _numberOfTokens) public whenNotPaused {
+        _issue(_to, _fee, _numberOfTokens);
     }
 
     /**
