@@ -9,6 +9,7 @@ import "./Ownable.sol";
  * @dev Base contract which allows children to implement an emergency stop mechanism.
  */
 contract Pausable is Ownable {
+    
     event Pause();
     event Unpause();
 

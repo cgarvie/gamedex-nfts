@@ -114,45 +114,12 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
     }
 
     /**
-     * @dev Returns whether the given spender can transfer a given token ID
-     * @param _spender address of the spender to query
-     * @param _tokenId uint256 ID of the token to be transferred
-     * @return bool whether the msg.sender is approved for the given token ID,
-     *  is an operator of the owner, or is the owner of the token
-     */
-    function isApprovedOrOwner(
-        address _spender,
-        uint256 _tokenId
-    )
-    internal
-    view
-    returns (bool)
-    {
-        address owner = ownerOf(_tokenId);
-        // Disable solium check because of
-        // https://github.com/duaraghav8/Solium/issues/175
-        // solium-disable-next-line operator-whitespace
-        return (
-        _spender == owner ||
-        getApproved(_tokenId) == _spender ||
-        isApprovedForAll(owner, _spender)
-        );
-    }
-
-    /**
      * @dev Tells whether an operator is approved by a given owner.
      * @param _owner owner address which you want to query the approval of.
      * @param _operator operator address which you want to query the approval of.
      * @return bool whether the given operator is approved by the given owner.
      */
-    function isApprovedForAll(
-        address _owner,
-        address _operator
-    )
-    public
-    view
-    returns (bool)
-    {
+    function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
         return cardRepository.operatorApprovals(_owner, _operator);
     }
 
@@ -162,14 +129,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _index uint256 representing the index to be accessed of the requested tokens list.
      * @return uint256 token ID at the given index of the tokens list owned by the requested address.
      */
-    function tokenOfOwnerByIndex(
-        address _owner,
-        uint256 _index
-    )
-    public
-    view
-    returns (uint256)
-    {
+    function tokenOfOwnerByIndex(address _owner, uint256 _index) public view returns (uint256) {
         require(_index < balanceOf(_owner));
         return cardRepository.ownedTokens(_owner, _index);
     }
@@ -241,21 +201,13 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _to address to receive the ownership of the given token ID
      * @param _tokenId uint256 ID of the token to be transferred
     */
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-    public whenNotPaused
-    {
-        require(isApprovedOrOwner(msg.sender, _tokenId));
+    function transferFrom(address _from, address _to, uint256 _tokenId) public whenNotPaused {
+        require(_isApprovedOrOwner(msg.sender, _tokenId));
         require(_to != address(0));
 
         _clearApproval(_from, _tokenId);
         _removeTokenFrom(_from, _tokenId);
         _addTokenTo(_to, _tokenId);
-
-        emit Transfer(_from, _to, _tokenId);
     }
 
     /**
@@ -270,13 +222,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _to address to receive the ownership of the given token ID
      * @param _tokenId uint256 ID of the token to be transferred
     */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-    public whenNotPaused
-    {
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId) public whenNotPaused {
         // solium-disable-next-line arg-overflow
         safeTransferFrom(_from, _to, _tokenId, "");
     }
@@ -293,17 +239,25 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _tokenId uint256 ID of the token to be transferred
      * @param _data bytes data to send along with a safe transfer check
      */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        bytes _data
-    )
-    public whenNotPaused
-    {
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes _data) public whenNotPaused {
         transferFrom(_from, _to, _tokenId);
         // solium-disable-next-line arg-overflow
         require(_checkAndCallSafeTransfer(_from, _to, _tokenId, _data));
+    }
+
+    /**
+     * @dev Returns whether the given spender can transfer a given token ID
+     * @param _spender address of the spender to query
+     * @param _tokenId uint256 ID of the token to be transferred
+     * @return bool whether the msg.sender is approved for the given token ID,
+     *  is an operator of the owner, or is the owner of the token
+     */
+    function _isApprovedOrOwner(address _spender, uint256 _tokenId) internal view returns (bool) {
+        address owner = ownerOf(_tokenId);
+        // Disable solium check because of
+        // https://github.com/duaraghav8/Solium/issues/175
+        // solium-disable-next-line operator-whitespace
+        return (_spender == owner || getApproved(_tokenId) == _spender || isApprovedForAll(owner, _spender));
     }
 
     /**
@@ -315,15 +269,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      * @param _data bytes optional data to send along with the call
      * @return whether the call correctly returned the expected magic value
      */
-    function _checkAndCallSafeTransfer(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        bytes _data
-    )
-    internal
-    returns (bool)
-    {
+    function _checkAndCallSafeTransfer(address _from, address _to, uint256 _tokenId, bytes _data) internal returns (bool) {
         if (!_to.isContract()) {
             return true;
         }
@@ -352,6 +298,7 @@ contract ERC721Token is ERC721, Pausable, SupportsInterfaceWithLookup {
      */
     function _addTokenTo(address _to, uint256 _tokenId) internal {
         require(cardRepository.tokenOwner(_tokenId) == address(0));
+        
         cardRepository.setTokenOwner(_to, _tokenId);
         cardRepository.increaseOwnedTokensCount(_to);
 

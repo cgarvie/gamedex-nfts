@@ -25,29 +25,21 @@ contract SupportsInterfaceWithLookup is ERC165 {
      * @dev A contract implementing SupportsInterfaceWithLookup
      * implement ERC165 itself
      */
-    constructor()
-    public
-    {
+    constructor() public {
         _registerInterface(InterfaceId_ERC165);
     }
 
     /**
      * @dev implement supportsInterface(bytes4) using a lookup table
      */
-    function supportsInterface(bytes4 _interfaceId)
-    external
-    view
-    returns (bool)
-    {
+    function supportsInterface(bytes4 _interfaceId) external view returns (bool) {
         return supportedInterfaces[_interfaceId];
     }
 
     /**
      * @dev private method for registering an interface
      */
-    function _registerInterface(bytes4 _interfaceId)
-    internal
-    {
+    function _registerInterface(bytes4 _interfaceId) internal {
         require(_interfaceId != 0xffffffff);
         supportedInterfaces[_interfaceId] = true;
     }

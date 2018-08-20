@@ -9,6 +9,7 @@ import "../tokens/ERC721Token.sol";
  * and a public setter for metadata URI
  */
 contract ERC721TokenMock is ERC721Token {
+    
     constructor(address _cardRepo) public ERC721Token(_cardRepo) {
 
     }

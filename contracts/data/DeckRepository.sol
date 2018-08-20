@@ -134,7 +134,7 @@ contract DeckRepository is Ownable {
      * @param _deckId ID of deck.
      * @param _index Index of deck.
      */
-    function setIssuedDecks(address _issuer, uint256 _deckId, uint256 _index) public onlyOwner {
+    function setIssuedDeckId(address _issuer, uint256 _index, uint256 _deckId) public onlyOwner {
         issuedDecks[_issuer][_index] = _deckId;
     }
 

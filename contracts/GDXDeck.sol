@@ -15,15 +15,6 @@ contract GDXDeck is ERC897434Token {
     }
 
     /**
-     * @dev Issues a new deck.
-     * @param _fee Royalty fee of the tokens.
-     * @param _numberOfTokens Number of tokens to issue.
-     */
-    function issueDeck(address _to, uint256 _fee, uint256 _numberOfTokens) public whenNotPaused {
-        _issue(_to, _fee, _numberOfTokens);
-    }
-
-    /**
      * @dev Transfer storage rights to another address.
      * Can only be called by the contract owner.
      * @param _contractAddress address to transfer the rights.
@@ -40,6 +31,7 @@ contract GDXDeck is ERC897434Token {
      */
     function killContract() public onlyOwner {
         require(cardRepository.owner() != address(this));
+        require(deckRepository.owner() != address(this));
 
         // Kill the contract now
         selfdestruct(owner);

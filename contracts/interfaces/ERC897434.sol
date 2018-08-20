@@ -15,5 +15,6 @@ contract ERC897434 is ERC721 {
     function deckExists(uint256 _deckId) public view returns (bool);
     function deckIdOf(uint256 _tokenId) public view returns (uint256);
     function royaltyFee(address _buyer, uint256 _tokenId) public view returns (uint256);
-    function transferDeck(address _from, address _to, uint256 _deckId) public;
+    function issueDeck(address _to, uint256 _fee, uint256 _numberOfTokens) public;
+    function transferDeck(address _to, uint256 _deckId) public;
 }

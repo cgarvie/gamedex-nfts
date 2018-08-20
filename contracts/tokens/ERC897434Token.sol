@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
 import "../interfaces/ERC897434.sol";
-import "../interfaces/ERC223Interface.sol";
+import "../interfaces/ERC223.sol";
 import "./ERC721Token.sol";
 import "../data/DeckRepository.sol";
 import "../control/Pausable.sol";
@@ -18,13 +18,13 @@ contract ERC897434Token is ERC897434, ERC721Token {
     DeckRepository public deckRepository;
 
     // Reference to ERC-223 token deployed
-    ERC223Interface public erc223;
+    ERC223 public erc223;
 
     /**
     * @dev Constructor function
     */
     constructor(address _erc223, address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
-        erc223 = ERC223Interface(_erc223);
+        erc223 = ERC223(_erc223);
         deckRepository = DeckRepository(_deckRepo);
     }
 
@@ -34,14 +34,7 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @param _index uint256 representing the index to be accessed of the requested decks list.
      * @return uint256 deck ID at the given index of the decks list issued by the requested address.
      */
-    function deckOfIssuerByIndex(
-        address _issuer,
-        uint256 _index
-    )
-    public
-    view
-    returns (uint256)
-    {
+    function deckOfIssuerByIndex(address _issuer, uint256 _index) public view returns (uint256) {
         require(_index < balanceOf(_issuer));
         return deckRepository.issuedDecks(_issuer, _index);
     }
@@ -114,31 +107,33 @@ contract ERC897434Token is ERC897434, ERC721Token {
         if (matchedTokensCount == 0) {
             return fee;
         }
-        return calculateDiscountedFee(matchedTokensCount, fee);
+        return _calculateDiscountedFee(matchedTokensCount, fee);
     }
 
     /**
-     * @dev Returns the discounted royalty fee of token in wei.
-     * @param _matchedTokensCount uint256 representing the tokens owned by the buyer.
-     * @return uint256 standard royalty fee in wei.
+     * @dev Issues a new deck.
+     * @param _to Issue new deck to address.
+     * @param _fee Royalty fee of the tokens.
+     * @param _numberOfTokens Number of tokens to issue.
      */
+    function issueDeck(address _to, uint256 _fee, uint256 _numberOfTokens) public whenNotPaused {
+        require(_to != address(0));
+        require(_numberOfTokens != 0);
+        
+        _issue(_to, _fee, _numberOfTokens);
+    }
 
-    function calculateDiscountedFee(uint256 _matchedTokensCount, uint256 _standardFee) public pure returns (uint256) {
-        uint x = 2 ** (_matchedTokensCount * 100 / 50);
-        uint m = (10 ** _matchedTokensCount) / x;
-//        uint p = 10 * m / 2 ** ++matchedTokensCount;
-        uint p = m / 2 ** _matchedTokensCount;
-        uint c = ceil(p);
-        uint fact = c / 1000;
-        uint n;
-        if (fact == 0) {
-            n = 1000 - p;
-        } else {
-            n = (1000 * fact) - p;
-        }
+    /**
+     * @dev Transfers the ownership of a given deck ID to another address
+     * @param _to address to receive the ownership of the given deck ID
+     * @param _deckId uint256 ID of the deck to be transferred
+    */
+    function transferDeck(address _to, uint256 _deckId) public whenNotPaused {
+        require(_isIssuer(msg.sender, _deckId));
+        require(_to != address(0));
 
-        uint count = Strings.utfStringLength(Strings.uint2str(fact)) - 1;
-        return (_standardFee * n) / (1000 * (100 ** count));
+        _removeDeckFrom(msg.sender, _deckId);
+        _addDeckTo(_to, _deckId);
     }
 
     /**
@@ -149,23 +144,22 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @param _to address to receive the ownership of the given token ID
      * @param _tokenId uint256 ID of the token to be transferred
     */
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-    public whenNotPaused
-    {
-        require(isApprovedOrOwner(msg.sender, _tokenId));
-        require(_to != address(0));
-
-        _clearApproval(_from, _tokenId);
-        _removeTokenFrom(_from, _tokenId);
-        _addTokenTo(_to, _tokenId);
+    function transferFrom(address _from, address _to, uint256 _tokenId) public whenNotPaused {
+        super.transferFrom(_from, _to, _tokenId);
 
         require(erc223.transferFrom(_to, _from, royaltyFee(_to, _tokenId)));
 
         emit Transfer(_from, _to, _tokenId);
+    }
+
+    /**
+     * @dev Returns whether the given address owns the given deck ID
+     * @param _issuer address of the issuer to query
+     * @param _deckId uint256 ID of the deck to query
+     * @return bool whether the issuer owns the given deck ID,
+     */
+    function _isIssuer(address _issuer, uint256 _deckId) internal view returns (bool) {
+        return _issuer == issuerOf(_deckId);
     }
 
     /**
@@ -182,6 +176,34 @@ contract ERC897434Token is ERC897434, ERC721Token {
         uint256 length = deckRepository.getIssuedDecksLength(_to);
         deckRepository.addToIssuedDecks(_to, _deckId);
         deckRepository.setIssuedDecksIndex(_deckId, length);
+    }
+
+    /**
+     * @dev Internal function to remove a deck ID from the list of a given address
+     * @param _from address representing the previous issuer of the given deck ID
+     * @param _deckId uint256 ID of the deck to be removed from the decks list of the given address
+     */
+    function _removeDeckFrom(address _from, uint256 _deckId) internal {
+        require(issuerOf(_deckId) == _from);
+        deckRepository.decreaseIssuedDecksCount(_from);
+        deckRepository.setDeckIssuer(address(0), _deckId);
+
+        // To prevent a gap in the array, we store the last token in the index of the token to delete, and
+        // then delete the last slot.
+        uint256 deckIndex = deckRepository.issuedDecksIndex(_deckId);
+        uint256 lastDeckIndex = deckRepository.getLastIssuedDeckIndex(_from);
+        uint256 lastDeck = deckRepository.issuedDecks(_from, lastDeckIndex);
+
+        deckRepository.setIssuedDeckId(_from, deckIndex, lastDeck);
+        // This also deletes the contents at the last position of the array
+        deckRepository.decreaseIssuedDecksLength(_from);
+
+        // Note that this will handle single-element arrays. In that case, both deckIndex and lastDeckIndex are going to
+        // be zero. Then we can make sure that we will remove _deckId from the issuedDecks list since we are first swapping
+        // the lastDeck to the first position, and then dropping the element placed in the last position of the list
+
+        deckRepository.setIssuedDecksIndex(_deckId, 0);
+        deckRepository.setIssuedDecksIndex(lastDeck, deckIndex);
     }
 
     /**
@@ -211,8 +233,31 @@ contract ERC897434Token is ERC897434, ERC721Token {
         emit DeckIssue(_to, deckRepository.numberOfTotalDecks());
     }
 
+    /**
+     * @dev Returns the discounted royalty fee of token in wei.
+     * @param _matchedTokensCount uint256 representing the tokens owned by the buyer.
+     * @return uint256 standard royalty fee in wei.
+     */
+
+    function _calculateDiscountedFee(uint256 _matchedTokensCount, uint256 _standardFee) private pure returns (uint256) {
+        uint x = 2 ** (_matchedTokensCount * 100 / 50);
+        uint m = (10 ** _matchedTokensCount) / x;
+        uint p = m / 2 ** _matchedTokensCount;
+        uint c = ceil(p);
+        uint fact = c / 1000;
+        uint n;
+        if (fact == 0) {
+            n = 1000 - p;
+        } else {
+            n = (1000 * fact) - p;
+        }
+
+        uint count = Strings.utfStringLength(Strings.uintToString(fact)) - 1;
+        return (_standardFee * n) / (1000 * (100 ** count));
+    }
+
     function ceil(uint a) private pure returns (uint) {
-        string memory x = Strings.uint2str(a);
+        string memory x = Strings.uintToString(a);
         uint256 length = Strings.utfStringLength(x);
         string memory s = "1";
         for (uint i = 0; i < length; i++) {

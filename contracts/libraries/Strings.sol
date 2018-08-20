@@ -1,6 +1,10 @@
 pragma solidity 0.4.24;
 
 
+/**
+ * @title Strings
+ * @dev Utility functions for strings manipulation
+ */
 library Strings {
 
     function strConcat(string _a, string _b, string _c, string _d, string _e) internal pure returns (string) {
@@ -32,7 +36,7 @@ library Strings {
         return strConcat(_a, _b, "", "", "");
     }
 
-    function uint2str(uint i) internal pure returns (string) {
+    function uintToString(uint i) internal pure returns (string) {
         if (i == 0) return "0";
         uint j = i;
         uint len;

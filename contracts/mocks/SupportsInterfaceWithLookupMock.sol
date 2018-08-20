@@ -4,9 +4,8 @@ import "../interfaces/SupportsInterfaceWithLookup.sol";
 
 
 contract SupportsInterfaceWithLookupMock is SupportsInterfaceWithLookup {
-    function registerInterface(bytes4 _interfaceId)
-    public
-    {
+
+    function registerInterface(bytes4 _interfaceId) public {
         _registerInterface(_interfaceId);
     }
 }
