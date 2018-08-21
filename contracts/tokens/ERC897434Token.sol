@@ -23,30 +23,8 @@ contract ERC897434Token is ERC897434, ERC721Token {
     /**
     * @dev Constructor function
     */
-    constructor(address _erc223, address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
-        erc223 = ERC223(_erc223);
+    constructor(address _deckRepo, address _cardRepo) ERC721Token(_cardRepo) public {
         deckRepository = DeckRepository(_deckRepo);
-    }
-
-    /**
-     * @dev Gets the deck ID at a given index of the decks list of the requested issuer.
-     * @param _issuer address issued the decks list to be accessed.
-     * @param _index uint256 representing the index to be accessed of the requested decks list.
-     * @return uint256 deck ID at the given index of the decks list issued by the requested address.
-     */
-    function deckOfIssuerByIndex(address _issuer, uint256 _index) public view returns (uint256) {
-        require(_index < balanceOf(_issuer));
-        return deckRepository.issuedDecks(_issuer, _index);
-    }
-
-    /**
-     * @dev Gets the deck ID at a given index of all the decks in this contract.
-     * Reverts if the index is greater or equal to the total number of decks.
-     * @param _index uint256 representing the index to be accessed of the decks list.
-     * @return uint256 deck ID at the given index of the decks list.
-     */
-    function deckByIndex(uint256 _index) public view returns (uint256) {
-        return deckRepository.getDeckIdByIndex(_index);
     }
 
     /**
@@ -56,7 +34,7 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @return address issuer of the deck.
      */
     function issuerOf(uint256 _deckId) public view returns (address) {
-        return deckRepository.getDeckIssuer(_deckId);
+        return deckRepository.deckToIssuer(_deckId);
     }
 
     /**
@@ -65,7 +43,7 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @return uint256 number of tokens issued in the deck.
      */
     function totalSupplyOf(uint256 _deckId) public view returns (uint256) {
-        return deckRepository.getSupplyOfDeck(_deckId);
+        return deckRepository.getTotalSupply(_deckId);
     }
 
     /**
@@ -74,7 +52,7 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @return bool whether the deck exists.
      */
     function deckExists(uint256 _deckId) public view returns (bool) {
-        address issuer = deckRepository.deckIssuer(_deckId);
+        address issuer = deckRepository.deckToIssuer(_deckId);
         return issuer != address(0);
     }
 
@@ -93,12 +71,12 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @return uint256 royalty fee in wei.
      */
     function royaltyFee(address _buyer, uint256 _tokenId) public view returns (uint256) {
-        address issuer = deckRepository.getDeckIssuer(cardRepository.getDeckIdOfToken(_tokenId));
+        address issuer = deckRepository.deckToIssuer(cardRepository.getDeckIdOfToken(_tokenId));
         uint256[] memory tokens = cardRepository.getListOfOwnedTokens(_buyer);
         uint256 matchedTokensCount = 0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (issuer == deckRepository.getDeckIssuer(cardRepository.getDeckIdOfToken(_tokenId))) {
+            if (issuer == deckRepository.deckToIssuer(cardRepository.getDeckIdOfToken(_tokenId))) {
                 matchedTokensCount++;
             }
         }
@@ -108,32 +86,6 @@ contract ERC897434Token is ERC897434, ERC721Token {
             return fee;
         }
         return _calculateDiscountedFee(matchedTokensCount, fee);
-    }
-
-    /**
-     * @dev Issues a new deck.
-     * @param _to Issue new deck to address.
-     * @param _fee Royalty fee of the tokens.
-     * @param _numberOfTokens Number of tokens to issue.
-     */
-    function issueDeck(address _to, uint256 _fee, uint256 _numberOfTokens) public whenNotPaused {
-        require(_to != address(0));
-        require(_numberOfTokens != 0);
-        
-        _issue(_to, _fee, _numberOfTokens);
-    }
-
-    /**
-     * @dev Transfers the ownership of a given deck ID to another address
-     * @param _to address to receive the ownership of the given deck ID
-     * @param _deckId uint256 ID of the deck to be transferred
-    */
-    function transferDeck(address _to, uint256 _deckId) public whenNotPaused {
-        require(_isIssuer(msg.sender, _deckId));
-        require(_to != address(0));
-
-        _removeDeckFrom(msg.sender, _deckId);
-        _addDeckTo(_to, _deckId);
     }
 
     /**
@@ -165,45 +117,12 @@ contract ERC897434Token is ERC897434, ERC721Token {
     /**
      * @dev Internal function to add a token ID to the list of a given address.
      * @param _to address representing the new issuer of the given deck ID.
-     * @param _deckId uint256 ID of the deck to be added to the decks list of the given address.
      */
-    function _addDeckTo(address _to, uint256 _deckId) internal {
-        require(deckRepository.deckIssuer(_deckId) == address(0));
+    function _addDeckTo(address _to) internal {
+        require(deckRepository.deckToIssuer(deckRepository.numberOfTotalDecks()) == address(0));
 
-        deckRepository.setDeckIssuer(_to, _deckId);
-        deckRepository.increaseIssuedDecksCount(_to);
-
-        uint256 length = deckRepository.getIssuedDecksLength(_to);
-        deckRepository.addToIssuedDecks(_to, _deckId);
-        deckRepository.setIssuedDecksIndex(_deckId, length);
-    }
-
-    /**
-     * @dev Internal function to remove a deck ID from the list of a given address
-     * @param _from address representing the previous issuer of the given deck ID
-     * @param _deckId uint256 ID of the deck to be removed from the decks list of the given address
-     */
-    function _removeDeckFrom(address _from, uint256 _deckId) internal {
-        require(issuerOf(_deckId) == _from);
-        deckRepository.decreaseIssuedDecksCount(_from);
-        deckRepository.setDeckIssuer(address(0), _deckId);
-
-        // To prevent a gap in the array, we store the last token in the index of the token to delete, and
-        // then delete the last slot.
-        uint256 deckIndex = deckRepository.issuedDecksIndex(_deckId);
-        uint256 lastDeckIndex = deckRepository.getLastIssuedDeckIndex(_from);
-        uint256 lastDeck = deckRepository.issuedDecks(_from, lastDeckIndex);
-
-        deckRepository.setIssuedDeckId(_from, deckIndex, lastDeck);
-        // This also deletes the contents at the last position of the array
-        deckRepository.decreaseIssuedDecksLength(_from);
-
-        // Note that this will handle single-element arrays. In that case, both deckIndex and lastDeckIndex are going to
-        // be zero. Then we can make sure that we will remove _deckId from the issuedDecks list since we are first swapping
-        // the lastDeck to the first position, and then dropping the element placed in the last position of the list
-
-        deckRepository.setIssuedDecksIndex(_deckId, 0);
-        deckRepository.setIssuedDecksIndex(lastDeck, deckIndex);
+        deckRepository.increaseTotalDecksCount();
+        deckRepository.setDeckToIssuer(deckRepository.numberOfTotalDecks(), _to);
     }
 
     /**
@@ -216,18 +135,12 @@ contract ERC897434Token is ERC897434, ERC721Token {
     function _issue(address _to, uint256 _fee, uint256 _numberOfTokens) public {
         require(_to != address(0));
 
-        deckRepository.increaseTotalDecksCount();
-        _addDeckTo(_to, deckRepository.numberOfTotalDecks());
-
-        deckRepository.increaseAllDecksIndex();
-        deckRepository.increaseAllDeckIds();
-
-        deckRepository.addToDeckStructs(deckRepository.numberOfTotalDecks(), _to);
+        _addDeckTo(_to);
 
         for (uint256 i = 0; i < _numberOfTokens; i++) {
             cardRepository.increaseTotalTokensCount();
             _mint(_to, cardRepository.numberOfTotalTokens(), deckRepository.numberOfTotalDecks(), _fee);
-            deckRepository.addToDeckTokenIds(deckRepository.numberOfTotalDecks(), cardRepository.numberOfTotalTokens());
+            deckRepository.setDeckToTokens(deckRepository.numberOfTotalDecks(), cardRepository.numberOfTotalTokens());
         }
 
         emit DeckIssue(_to, deckRepository.numberOfTotalDecks());

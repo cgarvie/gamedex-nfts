@@ -3,25 +3,34 @@ pragma solidity 0.4.24;
 import "./tokens/ERC897434Token.sol";
 
 
-contract GDXDeck is ERC897434Token {
+contract GDXCard is ERC897434Token {
 
     /**
     * @dev Constructor function.
     * @param _deckRepo Address of storage contract DeckRepository.
     * @param _cardRepo Address of storage contract CardRepository.
     */
-    constructor(address _erc223, address _deckRepo, address _cardRepo) ERC897434Token(_erc223, _deckRepo, _cardRepo) public {
+    constructor(address _deckRepo, address _cardRepo) ERC897434Token(_deckRepo, _cardRepo) public {
         
     }
 
     /**
      * @dev Transfer storage rights to another address.
      * Can only be called by the contract owner.
-     * @param _contractAddress address to transfer the rights.
+     * @param _address address to transfer the rights.
      */
-    function transferStorageOwnership(address _contractAddress) public onlyOwner {
-        cardRepository.transferOwnership(_contractAddress);
-        deckRepository.transferOwnership(_contractAddress);
+    function transferStorageOwnership(address _address) public onlyOwner {
+        cardRepository.transferOwnership(_address);
+        deckRepository.transferOwnership(_address);
+    }
+
+    /**
+     * @dev Update address of ERC223 GDX contract address.
+     * Can only be called by the contract owner.
+     * @param _erc223 address of the GDX token.
+     */
+    function updateERC223TokenAddress(address _erc223) public onlyOwner {
+        erc223 = ERC223(_erc223);
     }
 
     /**
@@ -33,7 +42,7 @@ contract GDXDeck is ERC897434Token {
         require(cardRepository.owner() != address(this));
         require(deckRepository.owner() != address(this));
 
-        // Kill the contract now
+        // Kill the contract now.
         selfdestruct(owner);
     }
 }
