@@ -92,6 +92,7 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @dev Transfers the ownership of a given token ID to another address
      * Usage of this method is discouraged, use `safeTransferFrom` whenever possible
      * Requires the msg sender to be the owner, approved, or operator
+     * Requires the buyer of the card to first approve the same the number of GDX tokens as the royalty fee of the card to this contract.
      * @param _from current owner of the token
      * @param _to address to receive the ownership of the given token ID
      * @param _tokenId uint256 ID of the token to be transferred
@@ -119,31 +120,10 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @param _to address representing the new issuer of the given deck ID.
      */
     function _addDeckTo(address _to) internal {
-        require(deckRepository.deckToIssuer(deckRepository.numberOfTotalDecks()) == address(0));
+        require(deckRepository.deckToIssuer(deckRepository.getNextDeckId()) == address(0));
 
         deckRepository.increaseTotalDecksCount();
         deckRepository.setDeckToIssuer(deckRepository.numberOfTotalDecks(), _to);
-    }
-
-    /**
-     * @dev Internal function to issue a new deck.
-     * Reverts if the given deck ID already exists.
-     * @param _to address the beneficiary that will own the issued deck.
-     * @param _fee uint256 royalty fee for the tokens.
-     * @param _numberOfTokens uint256 number of tokens to be minted.
-     */
-    function _issue(address _to, uint256 _fee, uint256 _numberOfTokens) public {
-        require(_to != address(0));
-
-        _addDeckTo(_to);
-
-        for (uint256 i = 0; i < _numberOfTokens; i++) {
-            cardRepository.increaseTotalTokensCount();
-            _mint(_to, cardRepository.numberOfTotalTokens(), deckRepository.numberOfTotalDecks(), _fee);
-            deckRepository.setDeckToTokens(deckRepository.numberOfTotalDecks(), cardRepository.numberOfTotalTokens());
-        }
-
-        emit DeckIssue(_to, deckRepository.numberOfTotalDecks());
     }
 
     /**
@@ -151,7 +131,6 @@ contract ERC897434Token is ERC897434, ERC721Token {
      * @param _matchedTokensCount uint256 representing the tokens owned by the buyer.
      * @return uint256 standard royalty fee in wei.
      */
-
     function _calculateDiscountedFee(uint256 _matchedTokensCount, uint256 _standardFee) private pure returns (uint256) {
         uint x = 2 ** (_matchedTokensCount * 100 / 50);
         uint m = (10 ** _matchedTokensCount) / x;

@@ -29,6 +29,14 @@ contract DeckRepository is Ownable {
     }
 
     /**
+     * @dev Gets the total supply of the tokens in a deck.
+     * @return uint256 Total supply.
+     */
+    function getNextDeckId() public view returns (uint256) {
+        return numberOfTotalDecks.add(1);
+    }
+
+    /**
      * @dev Adds deck ID to a list of decks issued by address.
      * @param _issuer Address of issuer.
      * @param _tokenId ID of token.
